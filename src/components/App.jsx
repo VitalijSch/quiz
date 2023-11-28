@@ -1,73 +1,53 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import quiz from "../quiz/quiz";
 import QuizContainer from "./QuizContainer";
 
 function App() {
-    const quiz = [
-        { question: "Welches Element wird verwendet, um eine geordnete Liste zu erstellen?", rightAnswer: "<ol>", wrongAnswer: "<ul>" },
-        { question: "Welche Einheit wird in CSS verwendet, um die Breite eines Elements basierend auf der Breite des Anzeigebereichs des Viewports anzugeben?", rightAnswer: "vw", wrongAnswer: "px" },
-        { question: "Welche Funktion wird verwendet, um eine Zeitverzögerung für die Ausführung eines Codes festzulegen?", rightAnswer: "setTimeout()", wrongAnswer: "waitTimeout()" },
-        { question: "Welches Tag wird verwendet, um Text fett zu machen?", rightAnswer: "<b>", wrongAnswer: "<bold>" },
-        { question: "Welche Eigenschaft wird verwendet, um den Abstand zwischen den inneren Rändern eines Elements und seinem Inhalt zu steuern?", rightAnswer: "padding", wrongAnswer: "margin" }
-    ];
-
-    const [point, setPoint] = useState(0);
-    const [currentNumber, setCurrentNumber] = useState(0);
-    const [showScore, setShowScore] = useState(false);
-    const [totalPoints, setTotalPoints] = useState(0);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [points, setPoints] = useState(0);
     const [feedbackMessage, setFeedbackMessage] = useState("");
 
-    const currentQuiz = quiz[currentNumber];
+    useEffect(() => {
+        // Feedback basierend auf Punktestand setzen
+        if (points <= 2) setFeedbackMessage("Übe weiter!");
+        else if (points === 5) setFeedbackMessage("Perfekt! Volle Punktzahl!");
+        else setFeedbackMessage("Gut gemacht!");
 
-    function calculateQuizPoints(answer) {
-        const pointOneMore = currentQuiz.rightAnswer === answer ? 1 : 0;
-        const totalPoints = point + pointOneMore;
-        return totalPoints;
-    }
-
-    function generateFeedbackMessage(answer) {
-        const totalPoints = calculateQuizPoints(answer);
-        setTotalPoints(totalPoints);
-
-        if (totalPoints <= 2) {
-            setFeedbackMessage("nächstes Mal wird es besser👍");
-        } else if (totalPoints === 5) {
-            setFeedbackMessage("super du hast alle Fragen richtig🙌");
-        } else {
-            setFeedbackMessage("nicht schlecht👏");
-        }
-    }
-
-    function result(answer) {
-        if (currentQuiz.rightAnswer === answer) {
-            setPoint(point + 1);
-        }
-
-        if (currentNumber === 4) {
-            setShowScore(true);
-
-            generateFeedbackMessage(answer);
-
+        // Nach Abschluss des Quiz den Index und die Punkte zurücksetzen
+        currentIndex === quiz.length &&
             setTimeout(() => {
-                setPoint(0);
-                setCurrentNumber(0);
-                setShowScore(false);
-                setTotalPoints(0);
+                setCurrentIndex(0);
+                setPoints(0);
             }, 5000);
-        } else {
-            setCurrentNumber(currentNumber + 1);
-        }
-    }
+    }, [points, currentIndex]);
+
+    const handleAnswer = (answer) => {
+        // Punkte erhöhen, wenn die Antwort korrekt ist
+        quiz[currentIndex].rightAnswer === answer && setPoints(prevPoint => prevPoint + 1);
+        // Zum nächsten Frageindex wechseln
+        setCurrentIndex(prevIndex => prevIndex + 1);
+    };
 
     return (
-        <div className="container row h-100 d-flex align-items-center justify-content-center">
-            {showScore && <div className="alert alert-success mt-5 text-center col-6">{`Du hast ${totalPoints} Fragen von 5 richtig beantwortet, ${feedbackMessage}`}</div>}
-            <QuizContainer
-                question={currentQuiz.question}
-                rightAnswer={currentQuiz.rightAnswer}
-                wrongAnswer={currentQuiz.wrongAnswer}
-                currentNumber={currentNumber}
-                result={result}
-            />
+        <div className="container vh-100 d-flex align-items-center justify-content-center">
+            <div className="d-flex flex-column justify-content-center align-items-center">
+                {currentIndex < quiz.length ? (
+                    // Aktuelle Frage anzeigen
+                    <QuizContainer
+                        key={currentIndex}
+                        question={quiz[currentIndex].question}
+                        rightAnswer={quiz[currentIndex].rightAnswer}
+                        wrongAnswer={quiz[currentIndex].wrongAnswer}
+                        onAnswer={answer => handleAnswer(answer)}
+                    />
+                ) : (
+                    // Quiz abgeschlossen anzeigen
+                    <p className="alert alert-success">
+                        {`Glückwunsch! Du hast das Quiz abgeschlossen. Du hast ${points} von 5 Fragen richtig beantwortet, ${feedbackMessage}`}
+                    </p>
+                )}
+            </div>
         </div>
     );
 }
